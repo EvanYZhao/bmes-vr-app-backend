@@ -4,7 +4,7 @@
   "description": "websocket server",
   "main": "index.js",
   "scripts": {
-    "start": "nodemon index.js"
+    "start": "nodemon index.js --omit=dev"
   },
   "author": "",
   "license": "MIT",
