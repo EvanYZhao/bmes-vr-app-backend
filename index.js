@@ -23,7 +23,12 @@ const app = initializeApp({
    credential: credential.cert(serviceAccount),
 });
 
-const server = new WebSocket.Server({ port: 8080 });
+const port = process.env.PORT || 3000;
+
+const server = new WebSocket.Server({
+   host: "0.0.0.0",
+   port: port,
+});
 
 const connections = {};
 
@@ -36,9 +41,9 @@ const broadcast = (data) => {
 
 const handleClose = (uuid, who) => {
    if (who === "device") {
-      console.log("Raspberry Pi disconnected")
+      console.log("Raspberry Pi disconnected");
    } else {
-      console.log(who, "disconnected")
+      console.log(who, "disconnected");
    }
    delete connections[uuid];
 };
