@@ -1,6 +1,6 @@
 require("dotenv").config();
 const { getAuth } = require("firebase-admin/auth");
-const { credential } = require("firebase-admin");
+const { credential, auth } = require("firebase-admin");
 const { initializeApp } = require("firebase-admin/app");
 const WebSocket = require("ws");
 const uuidv4 = require("uuid").v4;
@@ -68,7 +68,28 @@ const authorizeConnection = (ws, token) => {
          })
          .catch((e) => {
             console.error("Could not authorize user:", e);
+            ws.write("401 Unauthorized \r\n\r\n");
             ws.close();
+            return;
+         });
+   }
+};
+
+const authorizeUpgrade = (ws, token, req, head) => {
+   const uuid = uuidv4();
+   if (token === process.env.DEVICE_PRIVATE_KEY) {
+      server.handleUpgrade(req, ws, head, (ws) => {
+         ws.emit("connection", ws, req);
+      });
+   } else {
+      getAuth(app)
+         .getUser(token)
+         .then(() => {})
+         .catch((e) => {
+            console.error("Could not authorize user:", e);
+            ws.write("HTTP 401 Unauthorized \r\n\r\n");
+            ws.close();
+            return;
          });
    }
 };
@@ -82,4 +103,10 @@ server.on("connection", (ws, req) => {
 
    const token = req.url.slice(process.env.SLICE_INT);
    authorizeConnection(ws, token);
+});
+
+// Listens for incompatible request connection
+server.on("upgrade", (req, ws, head) => {
+   const token = req.url.slice(process.env.SLICE_INT);
+   authorizeConnection(ws, token, req, head);
 });
