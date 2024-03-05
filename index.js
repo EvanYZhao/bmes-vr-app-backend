@@ -26,7 +26,7 @@ const app = initializeApp({
 const port = process.env.PORT || 3000;
 
 const server = new WebSocket.Server({
-   port: port
+   port: port,
 });
 
 const connections = {};
@@ -83,7 +83,11 @@ const authorizeUpgrade = (ws, token, req, head) => {
    } else {
       getAuth(app)
          .getUser(token)
-         .then(() => {})
+         .then(() => {
+            server.handleUpgrade(req, ws, head, (ws) => {
+               ws.emit("connection", ws, req);
+            });
+         })
          .catch((e) => {
             console.error("Could not authorize user:", e);
             ws.close();
