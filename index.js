@@ -26,8 +26,7 @@ const app = initializeApp({
 const port = process.env.PORT || 3000;
 
 const server = new WebSocket.Server({
-   host: "0.0.0.0",
-   port: port,
+   port: port
 });
 
 const connections = {};
@@ -68,15 +67,15 @@ const authorizeConnection = (ws, token) => {
          })
          .catch((e) => {
             console.error("Could not authorize user:", e);
-            ws.write("401 Unauthorized \r\n\r\n");
             ws.close();
             return;
          });
    }
 };
 
+// Only allows upgrade if matches server-side device password or
+// matches a logged in user UID in firebase auth table
 const authorizeUpgrade = (ws, token, req, head) => {
-   const uuid = uuidv4();
    if (token === process.env.DEVICE_PRIVATE_KEY) {
       server.handleUpgrade(req, ws, head, (ws) => {
          ws.emit("connection", ws, req);
@@ -87,7 +86,6 @@ const authorizeUpgrade = (ws, token, req, head) => {
          .then(() => {})
          .catch((e) => {
             console.error("Could not authorize user:", e);
-            ws.write("HTTP 401 Unauthorized \r\n\r\n");
             ws.close();
             return;
          });
@@ -108,5 +106,5 @@ server.on("connection", (ws, req) => {
 // Listens for incompatible request connection
 server.on("upgrade", (req, ws, head) => {
    const token = req.url.slice(process.env.SLICE_INT);
-   authorizeConnection(ws, token, req, head);
+   authorizeUpgrade(ws, token, req, head);
 });
