@@ -38,38 +38,32 @@ const broadcast = (data) => {
    });
 };
 
-const handleClose = (uuid, who) => {
-   if (who === "device") {
-      console.log("Raspberry Pi disconnected");
-   } else {
-      console.log(who, "disconnected");
-   }
+const handleClose = (uuid) => {
    delete connections[uuid];
 };
 
 // Only allows connection if matches server-side device password or
 // matches a logged in user UID in firebase auth table
-const authorizeConnection = (ws, token) => {
+const authorizeConnection = async (token) => {
    const uuid = uuidv4();
    if (token === process.env.DEVICE_PRIVATE_KEY) {
       console.log("Raspberry Pi connected");
-      connections[uuid] = ws;
-      ws.on("message", (message) => broadcast(message));
-      ws.on("close", () => handleClose(uuid, "device"));
+      return new Promise((resolve) => {
+         resolve(uuid);
+      });
    } else {
-      getAuth(app)
-         .getUser(token)
-         .then((userRecord) => {
-            console.log(userRecord.displayName + " connected");
-            connections[token] = ws;
-            ws.on("message", (message) => broadcast(message));
-            ws.on("close", () => handleClose(token, userRecord.displayName));
-         })
-         .catch((e) => {
-            console.error("Could not authorize user:", e);
-            ws.close();
-            return;
-         });
+      return new Promise((resolve, reject) => {
+         getAuth(app)
+            .getUser(token)
+            .then((userRecord) => {
+               console.log(userRecord.displayName + " connected");
+               resolve(token);
+            })
+            .catch((e) => {
+               console.error("Could not authorize user:", e);
+               reject(e);
+            });
+      });
    }
 };
 
@@ -104,7 +98,16 @@ server.on("connection", (ws, req) => {
    }
 
    const token = req.url.slice(process.env.SLICE_INT);
-   authorizeConnection(ws, token);
+
+   authorizeConnection(token)
+      .then((key) => {
+         connections[key] = ws;
+         ws.on("message", (message) => broadcast(message));
+         ws.on("close", () => handleClose(key));
+      })
+      .catch(() => {
+         ws.close();
+      });
 });
 
 // Listens for incompatible request connection
