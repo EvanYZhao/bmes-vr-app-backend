@@ -103,7 +103,7 @@ server.on("connection", (ws, req) => {
       .then((key) => {
          connections[key] = ws;
          ws.on("message", (message) => broadcast(message));
-         ws.on("close", () => handleClose(token));
+         ws.on("close", () => handleClose(key));
       })
       .catch(() => {
          ws.close();
