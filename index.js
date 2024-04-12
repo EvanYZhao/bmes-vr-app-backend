@@ -1,9 +1,8 @@
 require("dotenv").config();
 const { getAuth } = require("firebase-admin/auth");
-const { credential, auth } = require("firebase-admin");
+const { credential } = require("firebase-admin");
 const { initializeApp } = require("firebase-admin/app");
 const WebSocket = require("ws");
-const uuidv4 = require("uuid").v4;
 const serviceAccount = {
    type: process.env.FIREBASE_TYPE,
    project_id: process.env.FIREBASE_PROJECT_ID,
@@ -31,6 +30,9 @@ const server = new WebSocket.Server({
 
 const connections = {};
 
+let angle = 0
+let vel_window = [null, null, null]
+
 const broadcast = (data) => {
    Object.keys(connections).forEach((uuid) => {
       const connection = connections[uuid];
@@ -39,17 +41,21 @@ const broadcast = (data) => {
 };
 
 const handleClose = (uuid) => {
+   // If raspberry pi disconnecting, reset angle and velocity window
+   if (uuid == "raspberry") {
+      angle = 0
+      vel_window = [null, null, null]
+   }
    delete connections[uuid];
 };
 
 // Only allows connection if matches server-side device password or
 // matches a logged in user UID in firebase auth table
 const authorizeConnection = async (token) => {
-   const uuid = uuidv4();
    if (token === process.env.DEVICE_PRIVATE_KEY) {
       console.log("Raspberry Pi connected");
       return new Promise((resolve) => {
-         resolve(uuid);
+         resolve("raspberry");
       });
    } else {
       return new Promise((resolve, reject) => {
@@ -90,6 +96,28 @@ const authorizeUpgrade = (ws, token, req, head) => {
    }
 };
 
+function simpsonsIntegration(val) {
+   const angularVelocity = parseFloat(val);
+
+   // Update the window, shifting everything to the right
+   vel_window[2] = vel_window[1]
+   vel_window[1] = vel_window[0]
+   vel_window[0] = angularVelocity
+
+   // If not enough points have been accumulated, then return a filler angle of 0
+   for (let i = 0; i < 3; i++) {
+      if (vel_window[i] === null) {
+         return "0.0"
+      }
+   } // Otherwise, enough datapoints have been accumulated so run below code
+
+   // Perform Simpson's rule integration to obtain angle with 3 most recent angular velocities
+   angle += (0.15 / 3) * (vel_window[0] + 4 * vel_window[1] + vel_window[2])
+
+   return angle.toFixed(2)
+
+}
+
 // Listens for a connection
 server.on("connection", (ws, req) => {
    if (!req.url.includes("?")) {
@@ -102,7 +130,8 @@ server.on("connection", (ws, req) => {
    authorizeConnection(token)
       .then((key) => {
          connections[key] = ws;
-         ws.on("message", (message) => broadcast(message));
+
+         ws.on("message", (message) => broadcast(simpsonsIntegration(message)));
          ws.on("close", () => handleClose(key));
       })
       .catch(() => {
