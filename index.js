@@ -133,10 +133,13 @@ server.on("connection", (ws, req) => {
 
          ws.on("message", (message) => {
             // Deconstructing the values received from raspberry pi
-            const ang_vel_one = message[0]
-            const cervical_flex_reading = message[1]
-            const thoracic_flex_reading = message[2]
-            const lumbar_flex_reading = message[3]
+            const ang_vel_one = message.angle
+            const cervical_flex_reading = message.cflex
+            const thoracic_flex_reading = message.tflex
+            const lumbar_flex_reading = message.lflex
+
+            console.log(message)
+
 
             // Deriving angle from angular velocity
             const ang_one = simpsonsIntegration(ang_vel_one)
