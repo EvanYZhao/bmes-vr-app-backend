@@ -131,7 +131,19 @@ server.on("connection", (ws, req) => {
       .then((key) => {
          connections[key] = ws;
 
-         ws.on("message", (message) => broadcast(simpsonsIntegration(message)));
+         ws.on("message", (message) => {
+            // Deconstructing the values received from raspberry pi
+            const ang_vel_one = message[0]
+            const cervical_flex_reading = message[1]
+            const thoracic_flex_reading = message[2]
+            const lumbar_flex_reading = message[3]
+
+            // Deriving angle from angular velocity
+            const ang_one = simpsonsIntegration(ang_vel_one)
+
+            // Broadcasting the data to the web app
+            broadcast((ang_one, cervical_flex_reading, thoracic_flex_reading, lumbar_flex_reading))
+         });
          ws.on("close", () => handleClose(key));
       })
       .catch(() => {
