@@ -134,7 +134,7 @@ server.on("connection", (ws, req) => {
          ws.on("message", (message) => {
             // Deconstructing the values received from raspberry pi
             const parsed = JSON.parse(message)
-            const ang_vel_one = parsed.angle
+            const ang_vel_one = parsed.angular_vel
             const cervical_flex_reading = parsed.cflex
             const thoracic_flex_reading = parsed.tflex
             const lumbar_flex_reading = parsed.lflex
@@ -145,8 +145,11 @@ server.on("connection", (ws, req) => {
             // Deriving angle from angular velocity
             const ang_one = simpsonsIntegration(ang_vel_one)
 
+            // Creating an obj to send
+            const json_data = {angle: ang_one, cflex: cervical_flex_reading, tflex: thoracic_flex_reading, lflex: lumbar_flex_reading}
+
             // Broadcasting the data to the web app
-            broadcast((ang_one, cervical_flex_reading, thoracic_flex_reading, lumbar_flex_reading))
+            broadcast(JSON.stringify(json_data))
          });
          ws.on("close", () => handleClose(key));
       })
