@@ -133,12 +133,13 @@ server.on("connection", (ws, req) => {
 
          ws.on("message", (message) => {
             // Deconstructing the values received from raspberry pi
-            const ang_vel_one = message.angle
-            const cervical_flex_reading = message.cflex
-            const thoracic_flex_reading = message.tflex
-            const lumbar_flex_reading = message.lflex
+            const parsed = JSON.parse(message)
+            const ang_vel_one = parsed.angle
+            const cervical_flex_reading = parsed.cflex
+            const thoracic_flex_reading = parsed.tflex
+            const lumbar_flex_reading = parsed.lflex
 
-            console.log(message)
+            console.log(JSON.parse(message))
 
 
             // Deriving angle from angular velocity
