@@ -30,8 +30,10 @@ const server = new WebSocket.Server({
 
 const connections = {};
 
-let angle = 0
-let vel_window = [null, null, null]
+let angle1 = 0
+let angle2 = 0
+let vel_window1 = [null, null, null]
+let vel_window2 = [null, null, null]
 
 const broadcast = (data) => {
    Object.keys(connections).forEach((uuid) => {
@@ -43,8 +45,10 @@ const broadcast = (data) => {
 const handleClose = (uuid) => {
    // If raspberry pi disconnecting, reset angle and velocity window
    if (uuid == "raspberry") {
-      angle = 0
-      vel_window = [null, null, null]
+      angle1 = 0
+      angle2 = 0
+      vel_window1 = [null, null, null]
+      vel_window2 = [null, null, null]
    }
    delete connections[uuid];
 };
@@ -96,26 +100,46 @@ const authorizeUpgrade = (ws, token, req, head) => {
    }
 };
 
-function simpsonsIntegration(val) {
+function simpsonsIntegration(val, imu) {
    const angularVelocity = parseFloat(val);
+   
+   if (imu) {
+      // Update the window, shifting everything to the right
+      vel_window1[2] = vel_window1[1]
+      vel_window1[1] = vel_window1[0]
+      vel_window1[0] = angularVelocity
 
-   // Update the window, shifting everything to the right
-   vel_window[2] = vel_window[1]
-   vel_window[1] = vel_window[0]
-   vel_window[0] = angularVelocity
+      // If not enough points have been accumulated, then return a filler angle of 0
+      for (let i = 0; i < 3; i++) {
+         if (vel_window1[i] === null) {
+            return "0.0"
+         }
+      } // Otherwise, enough datapoints have been accumulated so run below code
 
-   // If not enough points have been accumulated, then return a filler angle of 0
-   for (let i = 0; i < 3; i++) {
-      if (vel_window[i] === null) {
-         return "0.0"
-      }
-   } // Otherwise, enough datapoints have been accumulated so run below code
+      // Perform Simpson's rule integration to obtain angle with 3 most recent angular velocities
+      angle1 += (0.15 / 3) * (vel_window1[0] + 4 * vel_window1[1] + vel_window1[2])
+   } else {
+      // Update the window, shifting everything to the right
+      vel_window2[2] = vel_window2[1]
+      vel_window2[1] = vel_window2[0]
+      vel_window2[0] = angularVelocity
 
-   // Perform Simpson's rule integration to obtain angle with 3 most recent angular velocities
-   angle += (0.15 / 3) * (vel_window[0] + 4 * vel_window[1] + vel_window[2])
+      // If not enough points have been accumulated, then return a filler angle of 0
+      for (let i = 0; i < 3; i++) {
+         if (vel_window1[i] === null) {
+            return "0.0"
+         }
+      } // Otherwise, enough datapoints have been accumulated so run below code
 
-   return angle.toFixed(2)
+      // Perform Simpson's rule integration to obtain angle with 3 most recent angular velocities
+      angle2 += (0.15 / 3) * (vel_window2[0] + 4 * vel_window2[1] + vel_window2[2])
+   }
 
+   if (imu) {
+      return angle1.toFixed(2)
+   } else {
+      return angle2.toFixed(2)
+   }
 }
 
 // Listens for a connection
@@ -134,7 +158,8 @@ server.on("connection", (ws, req) => {
          ws.on("message", (message) => {
             // Deconstructing the values received from raspberry pi
             const parsed = JSON.parse(message)
-            const ang_vel_one = parsed.angular_vel
+            const ang_vel_one = parsed.angular_vel1
+            const ang_vel_two = parsed.angular_vel2
             const cervical_flex_reading = parsed.cflex
             const thoracic_flex_reading = parsed.tflex
             const lumbar_flex_reading = parsed.lflex
@@ -143,10 +168,11 @@ server.on("connection", (ws, req) => {
 
 
             // Deriving angle from angular velocity
-            const ang_one = simpsonsIntegration(ang_vel_one)
+            const ang_one = simpsonsIntegration(ang_vel_one, true)
+            const ang_two = simpsonsIntegration(ang_vel_two, false)
 
             // Creating an obj to send
-            const json_data = {angle: ang_one, cflex: cervical_flex_reading, tflex: thoracic_flex_reading, lflex: lumbar_flex_reading}
+            const json_data = {angle1: ang_one, angle2: ang_two, cflex: cervical_flex_reading, tflex: thoracic_flex_reading, lflex: lumbar_flex_reading}
 
             // Broadcasting the data to the web app
             broadcast(JSON.stringify(json_data))
