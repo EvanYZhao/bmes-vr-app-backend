@@ -34,6 +34,7 @@ let angle1 = 0
 let angle2 = 0
 let vel_window1 = [null, null, null]
 let vel_window2 = [null, null, null]
+let currently_on = false
 
 const broadcast = (data) => {
    Object.keys(connections).forEach((uuid) => {
@@ -158,14 +159,36 @@ server.on("connection", (ws, req) => {
          ws.on("message", (message) => {
             // Deconstructing the values received from raspberry pi
             const parsed = JSON.parse(message)
+            const pump = parsed.pump_power
             const ang_vel_one = parsed.angular_vel1
             const ang_vel_two = parsed.angular_vel2
             const cervical_flex_reading = parsed.cflex
             const thoracic_flex_reading = parsed.tflex
             const lumbar_flex_reading = parsed.lflex
 
-            console.log(JSON.parse(message))
+            console.log(parsed)
 
+            // In case pump button gets pressed, then propagate pump ping
+            // to raspberry pi and don't broadcast to the web app
+            if (pump) {
+               if ("raspberry" in connections) {
+                  currently_on = true
+                  rpi_con = connections["raspberry"]
+                  console.log("Turning on pumps")
+                  rpi_con.send(JSON.stringify({pump_power: pump}))
+               }
+               return
+            }
+
+            if (pump!= null && !pump && currently_on) {
+               if ("raspberry" in connections) {
+                  currently_on = false
+                  rpi_con = connections["raspberry"]
+                  console.log("Turning off pumps")
+                  rpi_con.send(JSON.stringify({pump_power: pump}))
+               }
+               return
+            }
 
             // Deriving angle from angular velocity
             const ang_one = simpsonsIntegration(ang_vel_one, true)
