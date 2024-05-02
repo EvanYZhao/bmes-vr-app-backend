@@ -35,6 +35,7 @@ let angle2 = 0
 let vel_window1 = [null, null, null]
 let vel_window2 = [null, null, null]
 let currently_on = false
+let rpi_connected = false
 
 const broadcast = (data) => {
    Object.keys(connections).forEach((uuid) => {
@@ -50,6 +51,7 @@ const handleClose = (uuid) => {
       angle2 = 0
       vel_window1 = [null, null, null]
       vel_window2 = [null, null, null]
+      rpi_connected = false
    }
    delete connections[uuid];
 };
@@ -59,6 +61,7 @@ const handleClose = (uuid) => {
 const authorizeConnection = async (token) => {
    if (token === process.env.DEVICE_PRIVATE_KEY) {
       console.log("Raspberry Pi connected");
+      rpi_connected = true
       return new Promise((resolve) => {
          resolve("raspberry");
       });
@@ -166,7 +169,11 @@ server.on("connection", (ws, req) => {
             const thoracic_flex_reading = parsed.tflex
             const lumbar_flex_reading = parsed.lflex
 
-            console.log(parsed)
+            // If the pump button gets pressed and the rpi is not connected,
+            // then propagate no data at all
+            if (pump != null && !rpi_connected) {
+               return
+            }
 
             // In case pump button gets pressed, then propagate pump ping
             // to raspberry pi and don't broadcast to the web app
