@@ -34,6 +34,8 @@ let angle1 = 0
 let angle2 = 0
 let vel_window1 = [null, null, null]
 let vel_window2 = [null, null, null]
+let prev_angle_1 = "0.0"
+let prev_angle_2 = "0.0"
 let currently_on = false
 let rpi_connected = false
 
@@ -113,10 +115,10 @@ function simpsonsIntegration(val, imu) {
       vel_window1[1] = vel_window1[0]
       vel_window1[0] = angularVelocity
 
-      // If not enough points have been accumulated, then return a filler angle of 0
+      // If not enough points have been accumulated, then return the previous angle
       for (let i = 0; i < 3; i++) {
          if (vel_window1[i] === null) {
-            return "0.0"
+            return prev_angle_1
          }
       } // Otherwise, enough datapoints have been accumulated so run below code
 
@@ -128,10 +130,10 @@ function simpsonsIntegration(val, imu) {
       vel_window2[1] = vel_window2[0]
       vel_window2[0] = angularVelocity
 
-      // If not enough points have been accumulated, then return a filler angle of 0
+      // If not enough points have been accumulated, then return the previous angle
       for (let i = 0; i < 3; i++) {
          if (vel_window1[i] === null) {
-            return "0.0"
+            return prev_angle_2
          }
       } // Otherwise, enough datapoints have been accumulated so run below code
 
@@ -139,9 +141,14 @@ function simpsonsIntegration(val, imu) {
       angle2 += (0.15 / 3) * (vel_window2[0] + 4 * vel_window2[1] + vel_window2[2])
    }
 
+   // Set filler angle and clear velocity window
    if (imu) {
+      vel_window1 = [null, null, null]
+      prev_angle_1 = angle1.toFixed(2)
       return angle1.toFixed(2)
    } else {
+      vel_window2 = [null, null, null]
+      prev_angle_2 = angle2.toFixed(2)
       return angle2.toFixed(2)
    }
 }
