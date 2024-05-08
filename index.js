@@ -36,6 +36,8 @@ let vel_window1 = [null, null, null]
 let vel_window2 = [null, null, null]
 let prev_angle_1 = "0.0"
 let prev_angle_2 = "0.0"
+let currently_on = false
+let rpi_connected = false
 
 const broadcast = (data) => {
    Object.keys(connections).forEach((uuid) => {
@@ -51,6 +53,7 @@ const handleClose = (uuid) => {
       angle2 = 0
       vel_window1 = [null, null, null]
       vel_window2 = [null, null, null]
+      rpi_connected = false
    }
    delete connections[uuid];
 };
@@ -60,6 +63,7 @@ const handleClose = (uuid) => {
 const authorizeConnection = async (token) => {
    if (token === process.env.DEVICE_PRIVATE_KEY) {
       console.log("Raspberry Pi connected");
+      rpi_connected = true
       return new Promise((resolve) => {
          resolve("raspberry");
       });
@@ -165,14 +169,40 @@ server.on("connection", (ws, req) => {
          ws.on("message", (message) => {
             // Deconstructing the values received from raspberry pi
             const parsed = JSON.parse(message)
+            const pump = parsed.pump_power
             const ang_vel_one = parsed.angular_vel1
             const ang_vel_two = parsed.angular_vel2
             const cervical_flex_reading = parsed.cflex
             const thoracic_flex_reading = parsed.tflex
             const lumbar_flex_reading = parsed.lflex
 
-            console.log(JSON.parse(message))
+            // If the pump button gets pressed and the rpi is not connected,
+            // then propagate no data at all
+            if (pump != null && !rpi_connected) {
+               return
+            }
 
+            // In case pump button gets pressed, then propagate pump ping
+            // to raspberry pi and don't broadcast to the web app
+            if (pump) {
+               if ("raspberry" in connections) {
+                  currently_on = true
+                  rpi_con = connections["raspberry"]
+                  console.log("Turning on pumps")
+                  rpi_con.send(JSON.stringify({pump_power: pump}))
+               }
+               return
+            }
+
+            if (pump!= null && !pump && currently_on) {
+               if ("raspberry" in connections) {
+                  currently_on = false
+                  rpi_con = connections["raspberry"]
+                  console.log("Turning off pumps")
+                  rpi_con.send(JSON.stringify({pump_power: pump}))
+               }
+               return
+            }
 
             // Deriving angle from angular velocity
             const ang_one = simpsonsIntegration(ang_vel_one, true)
