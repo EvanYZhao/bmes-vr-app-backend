@@ -132,7 +132,7 @@ function simpsonsIntegration(val, imu) {
 
       // If not enough points have been accumulated, then return the previous angle
       for (let i = 0; i < 3; i++) {
-         if (vel_window1[i] === null) {
+         if (vel_window2[i] === null) {
             return prev_angle_2
          }
       } // Otherwise, enough datapoints have been accumulated so run below code
