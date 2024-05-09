@@ -48,11 +48,14 @@ const broadcast = (data) => {
 
 const handleClose = (uuid) => {
    // If raspberry pi disconnecting, reset angle and velocity window
+   // and cached angle
    if (uuid == "raspberry") {
       angle1 = 0
       angle2 = 0
       vel_window1 = [null, null, null]
       vel_window2 = [null, null, null]
+      prev_angle_1 = "0.0"
+      prev_angle_2 = "0.0"
       rpi_connected = false
    }
    delete connections[uuid];
