@@ -17,7 +17,7 @@ const serviceAccount = {
     client_x509_cert_url: process.env.FIREBASE_CLIENT_X509_CERT_URL,
     universe_domain: process.env.FIREBASE_UNIVERSE_DOMAIN,
 };
-import ComplementaryFilter from "./Complementary";
+import ComplementaryFilter from "./Complementary.js";
 import * as math from "mathjs";
 
 const app = initializeApp({
