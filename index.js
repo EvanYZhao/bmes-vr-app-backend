@@ -1,7 +1,7 @@
 import dotenv from "dotenv";
 dotenv.config();
 import { getAuth } from "firebase-admin/auth";
-import { credential } from "firebase-admin";
+import pkg from "firebase-admin";
 import { initializeApp } from "firebase-admin/app";
 import WebSocket from "ws";
 const serviceAccount = {
@@ -20,6 +20,8 @@ const serviceAccount = {
 };
 import ComplementaryFilter from "./Complementary.js";
 import * as math from "mathjs";
+
+const { credential } = pkg;
 
 const app = initializeApp({
     credential: credential.cert(serviceAccount),
