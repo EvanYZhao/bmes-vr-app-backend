@@ -1,5 +1,6 @@
 {
   "name": "bmes-vr-app-backend",
+  "type": "module",
   "version": "1.0.0",
   "description": "websocket server",
   "main": "index.js",
@@ -11,6 +12,8 @@
   "dependencies": {
     "dotenv": "^16.4.5",
     "firebase-admin": "^12.0.0",
+    "lodash": "^4.17.21",
+    "mathjs": "^12.4.2",
     "nodemon": "^3.1.0",
     "uuid": "^9.0.1",
     "ws": "^8.16.0"

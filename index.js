@@ -1,4 +1,5 @@
 require("dotenv").config();
+import Complementary from "./Complementary";
 const { getAuth } = require("firebase-admin/auth");
 const { credential } = require("firebase-admin");
 const { initializeApp } = require("firebase-admin/app");
