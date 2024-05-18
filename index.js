@@ -1,7 +1,9 @@
-require("dotenv").config();
-const { getAuth } = require("firebase-admin/auth");
-const { credential } = require("firebase-admin");
-const { initializeApp } = require("firebase-admin/app");
+import dotenv from "dotenv";
+dotenv.config();
+import { getAuth } from "firebase-admin/auth";
+import { credential } from "firebase-admin";
+import { initializeApp } from "firebase-admin/app";
+import WebSocket from "ws";
 const WebSocket = require("ws");
 const serviceAccount = {
     type: process.env.FIREBASE_TYPE,
