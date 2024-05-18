@@ -4,7 +4,6 @@ import { getAuth } from "firebase-admin/auth";
 import { credential } from "firebase-admin";
 import { initializeApp } from "firebase-admin/app";
 import WebSocket from "ws";
-const WebSocket = require("ws");
 const serviceAccount = {
     type: process.env.FIREBASE_TYPE,
     project_id: process.env.FIREBASE_PROJECT_ID,
