@@ -1,5 +1,5 @@
 import lodash from "lodash";
-import * as math from "mathjs"
+import * as math from "mathjs";
 import { Quaternion } from "./Quaternion.js";
 
 // Helper fxn: Returns the shape of an array
@@ -131,18 +131,11 @@ export default class Complementary {
 
     // Gets "mixed" data in form of quaternion
     Q() {
-        if ('W' in this) {
-            this.W[0] // This is the 1D array holding pitch, roll, and yaw
-            return (new Quaternion(this.W[0]))._from_rpy()
+        if ("W" in this) {
+            this.W[0]; // This is the 1D array holding pitch, roll, and yaw
+            return new Quaternion(this.W[0])._from_rpy();
         } else {
-            throw new Error("No data available to perform attitude estimation")
+            throw new Error("No data available to perform attitude estimation");
         }
     }
 }
-
-// Testing
-let gyr = [[0.025699745547073327, -0.0202, -0.277]];
-let acc = [[0.01992992, -0.05502688, 1.0256]];
-let test = new Complementary(gyr, math.multiply(acc, 9.8), 0.1);
-console.log(test.Q())
-

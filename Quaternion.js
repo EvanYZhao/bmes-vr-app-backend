@@ -32,12 +32,12 @@ export class Quaternion {
         let cr = math.cos(0.5 * roll);
         let sr = math.sin(0.5 * roll);
 
-        let q = [0, 0, 0, 0]
-        q[0] = (cy * cp * cr) + (sy * sp * sr);
-        q[1] = (cy * cp * sr) - (sy * sp * cr);
-        q[2] = (cy * sp * cr) + (sy * cp * sr);
-        q[3] = (sy * cp * cr) - (cy * sp * sr);
-        
+        let q = [0, 0, 0, 0];
+        q[0] = cy * cp * cr + sy * sp * sr;
+        q[1] = cy * cp * sr - sy * sp * cr;
+        q[2] = cy * sp * cr + sy * cp * sr;
+        q[3] = sy * cp * cr - cy * sp * sr;
+
         return q;
     }
 }
