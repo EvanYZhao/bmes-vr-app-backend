@@ -3,7 +3,7 @@ dotenv.config();
 import { getAuth } from "firebase-admin/auth";
 import pkg from "firebase-admin";
 import { initializeApp } from "firebase-admin/app";
-import WebSocket from "ws";
+import WebSocket, { WebSocketServer } from "ws";
 const serviceAccount = {
     type: process.env.FIREBASE_TYPE,
     project_id: process.env.FIREBASE_PROJECT_ID,
@@ -29,7 +29,7 @@ const app = initializeApp({
 
 const port = process.env.PORT || 3000;
 
-const server = new WebSocket.Server({
+const server = new WebSocketServer({
     port: port,
 });
 
