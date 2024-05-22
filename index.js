@@ -185,8 +185,8 @@ server.on("connection", (ws, req) => {
 
                 // Creating an obj to send
                 const json_data = {
-                    angle1: ((ang_one * (180 / Math.PI))) / 2,
-                    angle2: 7 * ((ang_two * (180 / Math.PI))) / 27,
+                    angle1: ((ang_one * (180 / Math.PI))),
+                    angle2: ((ang_two * (180 / Math.PI))),
                     cflex: cervical_flex_reading,
                     tflex: thoracic_flex_reading,
                     lflex: lumbar_flex_reading,
