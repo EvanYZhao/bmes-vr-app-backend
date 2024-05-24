@@ -3,7 +3,7 @@ dotenv.config();
 import { getAuth } from "firebase-admin/auth";
 import pkg from "firebase-admin";
 import { initializeApp } from "firebase-admin/app";
-import WebSocket, { WebSocketServer } from "ws";
+import { WebSocketServer } from "ws";
 const serviceAccount = {
     type: process.env.FIREBASE_TYPE,
     project_id: process.env.FIREBASE_PROJECT_ID,
@@ -20,6 +20,7 @@ const serviceAccount = {
 };
 import ComplementaryFilter from "./Complementary.js";
 import * as math from "mathjs";
+import { reset } from "nodemon";
 
 const { credential } = pkg;
 
@@ -37,6 +38,45 @@ const connections = {};
 
 let currently_on = false;
 let rpi_connected = false;
+let rpi_con;
+
+const threshold_angle = 30
+const bad_posture_time_ms = 5000
+
+let timer
+let timerIsRunning = false
+
+function startTimer() {
+    if (!timerIsRunning) {
+        timerIsRunning = true
+        timer = setTimeout(() => {
+            timerIsRunning = false
+            if ("raspberry" in connections) {
+                currently_on = true;
+                rpi_con = connections["raspberry"];
+                console.log("Turning on pumps because consistent bad posture has been detected");
+                rpi_con.send(JSON.stringify({ pump_power: 1 }));
+            }
+        }, bad_posture_time_ms)
+    }  
+}
+
+function resetTimer() {
+    if (timerIsRunning) {
+        clearTimeout(timer)
+        timerIsRunning = false
+    }
+}
+
+function turnOffPumps() {
+    if ("raspberry" in connections) {
+        currently_on = false;
+        rpi_con = connections["raspberry"];
+        console.log("Turning off pumps because bad posture has been corrected");
+        rpi_con.send(JSON.stringify({ pump_power: 0 }));
+    }
+}
+
 
 const broadcast = (data) => {
     Object.keys(connections).forEach((uuid) => {
@@ -183,10 +223,31 @@ server.on("connection", (ws, req) => {
                             (1 - 2 * math.sqrt(i2 ** 2 + j2 ** 2))
                     );
 
+                let ang1 = ((ang_one * (180 / Math.PI)))
+                let ang2 = ((ang_two * (180 / Math.PI)))
+
+                // If your posture is bad while timer is not running, start the timer
+                if ((ang1 - ang2) >= threshold_angle && !timerIsRunning) {
+                    startTimer()
+                }
+
+                // If your posture is good while timer is running, kill the timer
+                if ((ang1 - ang2) < threshold_angle && timerIsRunning) {
+                    resetTimer()
+                }
+
+                // If your posture is good while timer is not running, then turn
+                // off the pumps if they are pumping
+                if ((ang1 - ang2) < threshold_angle && !timerIsRunning) {
+                    if (currently_on) {
+                        turnOffPumps()
+                    }
+                }
+
                 // Creating an obj to send
                 const json_data = {
-                    angle1: ((ang_one * (180 / Math.PI))),
-                    angle2: ((ang_two * (180 / Math.PI))),
+                    angle1: ang1,
+                    angle2: ang2,
                     cflex: cervical_flex_reading,
                     tflex: thoracic_flex_reading,
                     lflex: lumbar_flex_reading,
