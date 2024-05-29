@@ -138,7 +138,7 @@ server.on("connection", (ws, req) => {
                 if (pump) {
                     if ("raspberry" in connections) {
                         currently_on = true;
-                        rpi_con = connections["raspberry"];
+                        let rpi_con = connections["raspberry"];
                         console.log("Turning on pumps");
                         rpi_con.send(JSON.stringify({ pump_power: pump }));
                     }
@@ -148,7 +148,7 @@ server.on("connection", (ws, req) => {
                 if (pump != null && !pump && currently_on) {
                     if ("raspberry" in connections) {
                         currently_on = false;
-                        rpi_con = connections["raspberry"];
+                        let rpi_con = connections["raspberry"];
                         console.log("Turning off pumps");
                         rpi_con.send(JSON.stringify({ pump_power: pump }));
                     }
