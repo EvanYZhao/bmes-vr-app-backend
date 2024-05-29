@@ -37,7 +37,6 @@ const connections = {};
 
 let currently_on = false;
 let rpi_connected = false;
-let rpi_con;
 
 const threshold_angle = 30
 const bad_posture_time_ms = 5000
@@ -52,7 +51,7 @@ function startTimer() {
             timerIsRunning = false
             if ("raspberry" in connections) {
                 currently_on = true;
-                rpi_con = connections["raspberry"];
+                let rpi_con = connections["raspberry"];
                 console.log("Turning on pumps because consistent bad posture has been detected");
                 rpi_con.send(JSON.stringify({ pump_power: 1 }));
             }
@@ -70,7 +69,7 @@ function resetTimer() {
 function turnOffPumps() {
     if ("raspberry" in connections) {
         currently_on = false;
-        rpi_con = connections["raspberry"];
+        let rpi_con = connections["raspberry"];
         console.log("Turning off pumps because bad posture has been corrected");
         rpi_con.send(JSON.stringify({ pump_power: 0 }));
     }
@@ -177,7 +176,7 @@ server.on("connection", (ws, req) => {
                 if (pump) {
                     if ("raspberry" in connections) {
                         currently_on = true;
-                        rpi_con = connections["raspberry"];
+                        let rpi_con = connections["raspberry"];
                         console.log("Turning on pumps");
                         rpi_con.send(JSON.stringify({ pump_power: pump }));
                     }
@@ -187,7 +186,7 @@ server.on("connection", (ws, req) => {
                 if (pump != null && !pump && currently_on) {
                     if ("raspberry" in connections) {
                         currently_on = false;
-                        rpi_con = connections["raspberry"];
+                        let rpi_con = connections["raspberry"];
                         console.log("Turning off pumps");
                         rpi_con.send(JSON.stringify({ pump_power: pump }));
                     }
