@@ -38,31 +38,33 @@ const connections = {};
 let currently_on = false;
 let rpi_connected = false;
 
-const threshold_angle = 30
-const bad_posture_time_ms = 5000
+const threshold_angle = 15;
+const bad_posture_time_ms = 5000;
 
-let timer
-let timerIsRunning = false
+let timer;
+let timerIsRunning = false;
 
 function startTimer() {
     if (!timerIsRunning) {
-        timerIsRunning = true
+        timerIsRunning = true;
         timer = setTimeout(() => {
-            timerIsRunning = false
+            timerIsRunning = false;
             if ("raspberry" in connections) {
                 currently_on = true;
                 let rpi_con = connections["raspberry"];
-                console.log("Turning on pumps because consistent bad posture has been detected");
+                console.log(
+                    "Turning on pumps because consistent bad posture has been detected"
+                );
                 rpi_con.send(JSON.stringify({ pump_power: 1 }));
             }
-        }, bad_posture_time_ms)
-    }  
+        }, bad_posture_time_ms);
+    }
 }
 
 function resetTimer() {
     if (timerIsRunning) {
-        clearTimeout(timer)
-        timerIsRunning = false
+        clearTimeout(timer);
+        timerIsRunning = false;
     }
 }
 
@@ -74,7 +76,6 @@ function turnOffPumps() {
         rpi_con.send(JSON.stringify({ pump_power: 0 }));
     }
 }
-
 
 const broadcast = (data) => {
     Object.keys(connections).forEach((uuid) => {
@@ -221,18 +222,20 @@ server.on("connection", (ws, req) => {
                             (1 - 2 * math.sqrt(i2 ** 2 + j2 ** 2))
                     );
 
-                let ang1 = (9/32) * ((ang_one * (180 / Math.PI)))
-                let ang2 = (9/32) * ((ang_two * (180 / Math.PI)))
+                let ang1 = (9 / 32) * (ang_one * (180 / Math.PI));
+                let ang2 = (9 / 32) * (ang_two * (180 / Math.PI));
 
                 // If your posture is bad while timer is not running, start the timer
-                if ((ang1 - ang2) >= threshold_angle && !timerIsRunning) {
-                    console.log("Threshold exceeded for first time, starting timer")
-                    startTimer()
+                if (ang1 - ang2 >= threshold_angle && !timerIsRunning) {
+                    console.log(
+                        "Threshold exceeded for first time, starting timer"
+                    );
+                    startTimer();
                 }
 
                 // If your posture is good while timer is running, kill the timer
-                if ((ang1 - ang2) < threshold_angle && timerIsRunning) {
-                    resetTimer()
+                if (ang1 - ang2 < threshold_angle && timerIsRunning) {
+                    resetTimer();
                 }
 
                 // If your posture is good while timer is not running, then turn
