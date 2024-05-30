@@ -221,8 +221,8 @@ server.on("connection", (ws, req) => {
                             (1 - 2 * math.sqrt(i2 ** 2 + j2 ** 2))
                     );
 
-                let ang1 = ((ang_one * (180 / Math.PI)))
-                let ang2 = ((ang_two * (180 / Math.PI)))
+                let ang1 = (9/32) * ((ang_one * (180 / Math.PI)))
+                let ang2 = (9/32) * ((ang_two * (180 / Math.PI)))
 
                 // If your posture is bad while timer is not running, start the timer
                 if ((ang1 - ang2) >= threshold_angle && !timerIsRunning) {
