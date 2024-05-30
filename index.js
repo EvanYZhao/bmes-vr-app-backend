@@ -225,16 +225,17 @@ server.on("connection", (ws, req) => {
                 let ang2 = ((ang_two * (180 / Math.PI)))
 
                 // If your posture is bad while timer is not running, start the timer
-                // if ((ang1 - ang2) >= threshold_angle && !timerIsRunning) {
-                //     startTimer()
-                // }
+                if ((ang1 - ang2) >= threshold_angle && !timerIsRunning) {
+                    console.log("Threshold exceeded for first time, starting timer")
+                    startTimer()
+                }
 
-                // // If your posture is good while timer is running, kill the timer
-                // if ((ang1 - ang2) < threshold_angle && timerIsRunning) {
-                //     resetTimer()
-                // }
+                // If your posture is good while timer is running, kill the timer
+                if ((ang1 - ang2) < threshold_angle && timerIsRunning) {
+                    resetTimer()
+                }
 
-                // // If your posture is good while timer is not running, then turn
+                // If your posture is good while timer is not running, then turn
                 // // off the pumps if they are pumping
                 // if ((ang1 - ang2) < threshold_angle && !timerIsRunning) {
                 //     if (currently_on) {
