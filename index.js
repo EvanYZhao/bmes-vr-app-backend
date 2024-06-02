@@ -185,6 +185,7 @@ server.on("connection", (ws, req) => {
                 }
 
                 if (pump != null && !pump && currently_on) {
+                    console.log("Entered the manual turn-off block")
                     if ("raspberry" in connections) {
                         currently_on = false;
                         let rpi_con = connections["raspberry"];
@@ -235,16 +236,15 @@ server.on("connection", (ws, req) => {
 
                 // If your posture is good while timer is running, kill the timer
                 if (ang1 - ang2 < threshold_angle && timerIsRunning) {
+                    console.log("Stopping countdown because posture returned to normal")
                     resetTimer();
                 }
 
                 // If your posture is good while timer is not running, then turn
-                // // off the pumps if they are pumping
-                // if ((ang1 - ang2) < threshold_angle && !timerIsRunning) {
-                //     if (currently_on) {
-                //         turnOffPumps()
-                //     }
-                // }
+                // off the pumps if they are pumping
+                if (currently_on && (ang1 - ang2) < threshold_angle && !timerIsRunning) {
+                    turnOffPumps()
+                }
 
                 // Creating an obj to send
                 const json_data = {
