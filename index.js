@@ -242,9 +242,9 @@ server.on("connection", (ws, req) => {
 
                 // If your posture is good while timer is not running, then turn
                 // off the pumps if they are pumping
-                if (currently_on && (ang1 - ang2) < threshold_angle && !timerIsRunning) {
-                    turnOffPumps()
-                }
+                // if (currently_on && (ang1 - ang2) < threshold_angle && !timerIsRunning) {
+                //     turnOffPumps()
+                // }
 
                 // Creating an obj to send
                 const json_data = {
