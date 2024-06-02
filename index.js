@@ -35,7 +35,8 @@ const server = new WebSocketServer({
 
 const connections = {};
 
-let currently_on = false;
+let pumps_currently_on = false;
+let solenoids_currently_on = false;
 let rpi_connected = false;
 
 const threshold_angle = 15;
@@ -50,7 +51,7 @@ function startTimer() {
         timer = setTimeout(() => {
             timerIsRunning = false;
             if ("raspberry" in connections) {
-                currently_on = true;
+                pumps_currently_on = true;
                 let rpi_con = connections["raspberry"];
                 console.log(
                     "Turning on pumps because consistent bad posture has been detected"
@@ -70,7 +71,7 @@ function resetTimer() {
 
 function turnOffPumps() {
     if ("raspberry" in connections) {
-        currently_on = false;
+        pumps_currently_on = false;
         let rpi_con = connections["raspberry"];
         console.log("Turning off pumps because bad posture has been corrected");
         rpi_con.send(JSON.stringify({ pump_power: 0 }));
@@ -158,6 +159,7 @@ server.on("connection", (ws, req) => {
                 // Deconstructing the values received from raspberry pi
                 const parsed = JSON.parse(message);
                 const pump = parsed.pump_power;
+                const solenoid = parsed.solenoid_power
                 const gyro_1 = parsed.gyro_1;
                 const gyro_2 = parsed.gyro_2;
                 const acc_1 = parsed.acc_1;
@@ -166,17 +168,17 @@ server.on("connection", (ws, req) => {
                 const thoracic_flex_reading = parsed.tflex;
                 const lumbar_flex_reading = parsed.lflex;
 
-                // If the pump button gets pressed and the rpi is not connected,
+                // If a button gets pressed and the rpi is not connected,
                 // then propagate no data at all
-                if (pump != null && !rpi_connected) {
+                if ((pump != null || solenoid != null) && !rpi_connected) {
                     return;
                 }
 
-                // In case pump button gets pressed, then propagate pump ping
+                // In case turn-on pump button gets pressed, then propagate pump ping
                 // to raspberry pi and don't broadcast to the web app
                 if (pump) {
                     if ("raspberry" in connections) {
-                        currently_on = true;
+                        pumps_currently_on = true;
                         let rpi_con = connections["raspberry"];
                         console.log("Turning on pumps");
                         rpi_con.send(JSON.stringify({ pump_power: pump }));
@@ -184,13 +186,38 @@ server.on("connection", (ws, req) => {
                     return;
                 }
 
-                if (pump != null && !pump && currently_on) {
-                    console.log("Entered the manual turn-off block")
+                // In case turn-off pump button is pressed and pumps are
+                // currently on, then propagate to rpi and don't broadcast to web app
+                if (pump != null && !pump && pumps_currently_on) {
                     if ("raspberry" in connections) {
-                        currently_on = false;
+                        pumps_currently_on = false;
                         let rpi_con = connections["raspberry"];
                         console.log("Turning off pumps");
                         rpi_con.send(JSON.stringify({ pump_power: pump }));
+                    }
+                    return;
+                }
+
+                // In case turn-on solenoid button gets pressed, then propagate
+                // solenoid ping to rpi and don't broadcast to web app
+                if (solenoid) {
+                    if ("raspberry" in connections) {
+                        solenoids_currently_on = true;
+                        let rpi_con = connections["raspberry"];
+                        console.log("Activating solenoid valves to deflate");
+                        rpi_con.send(JSON.stringify({ solenoid_power: solenoid }));
+                    }
+                    return;
+                }
+
+                // In case turn-off solenoid button gets pressed, then propagate
+                // solenoid ping to rpi and don't broadcast to web app
+                if (solenoid != null && !solenoid && solenoids_currently_on) {
+                    if ("raspberry" in connections) {
+                        solenoids_currently_on = false;
+                        let rpi_con = connections["raspberry"];
+                        console.log("Deactivating solenoid valves to stop deflation");
+                        rpi_con.send(JSON.stringify({ solenoid_power: solenoid }));
                     }
                     return;
                 }
@@ -242,7 +269,7 @@ server.on("connection", (ws, req) => {
 
                 // If your posture is good while timer is not running, then turn
                 // off the pumps if they are pumping
-                // if (currently_on && (ang1 - ang2) < threshold_angle && !timerIsRunning) {
+                // if (pumps_currently_on && (ang1 - ang2) < threshold_angle && !timerIsRunning) {
                 //     turnOffPumps()
                 // }
 
