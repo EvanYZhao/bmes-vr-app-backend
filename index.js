@@ -74,7 +74,7 @@ function turnOffPumps() {
         pumps_currently_on = false;
         let rpi_con = connections["raspberry"];
         console.log("Turning off pumps because bad posture has been corrected");
-        rpi_con.send(JSON.stringify({ pump_power: 0 }));
+        rpi_con.send(JSON.stringify({ pump_power: false }));
     }
 }
 
@@ -232,23 +232,27 @@ server.on("connection", (ws, req) => {
                 let i1 = quat1[1];
                 let j1 = quat1[2];
                 let k1 = quat1[3];
-                const ang_one =
-                    2 *
-                    math.atan(
-                        (2 * (a1 * i1 + j1 * k1)) /
-                            (1 - 2 * math.sqrt(i1 ** 2 + j1 ** 2))
-                    );
+                // Wrong orientation for IMU (yaw)
+                // const ang_one = 
+                //     2 *
+                //     math.atan(
+                //         (2 * (a1 * i1 + j1 * k1)) /
+                //             (1 - 2 * math.sqrt(i1 ** 2 + j1 ** 2))
+                //     );
+                const ang_one = math.atan2(2 * (i1 * j1 + a1 * k1), a1**2 + i1**2 - j1**2 - k1**2)
 
                 let a2 = quat2[0];
                 let i2 = quat2[1];
                 let j2 = quat2[2];
                 let k2 = quat2[3];
-                const ang_two =
-                    2 *
-                    math.atan(
-                        (2 * (a2 * i2 + j2 * k2)) /
-                            (1 - 2 * math.sqrt(i2 ** 2 + j2 ** 2))
-                    );
+                // Wrong orientation for IMU (yaw)
+                // const ang_two =
+                //     2 *
+                //     math.atan(
+                //         (2 * (a2 * i2 + j2 * k2)) /
+                //             (1 - 2 * math.sqrt(i2 ** 2 + j2 ** 2))
+                //     );
+                const ang_two = math.atan2(2 * (i2 * j2 + a2 * k2), a2**2 + i2**2 - j2**2 - k2**2)
 
                 let ang1 = (9 / 32) * (ang_one * (180 / Math.PI));
                 let ang2 = (9 / 32) * (ang_two * (180 / Math.PI));
