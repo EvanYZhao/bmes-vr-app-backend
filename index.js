@@ -245,9 +245,10 @@ server.on("connection", (ws, req) => {
                 //         2 * (a1 * i1 + j1 * k1),
                 //         1 - 2 * math.sqrt(i1 ** 2 + j1 ** 2)
                 //     );
-                const ang_one = math.asin(2*(a1*j1 - i1*k1))
-
-                // arctan(2*(w*x + y*z) / (1 - 2 * math.sqrt(x^2 + y^2)))
+                let sinp1 = math.sqrt(1 + 2 * (a1 * j1 - i1 * k1))
+                let cosp1 = math.sqrt(1 - 2 * (a1 * j1 - i1 * k1))
+                const ang_one = 2 * math.atan2(sinp1, cosp1) - (math.pi/2)
+                
                 let a2 = quat2[0];
                 let i2 = quat2[1];
                 let j2 = quat2[2];
@@ -259,7 +260,9 @@ server.on("connection", (ws, req) => {
                 //         2 * (a2 * i2 + j2 * k2),
                 //         1 - 2 * math.sqrt(i2 ** 2 + j2 ** 2)
                 //     );
-                const ang_two = math.asin(2*(a2*j2 - i2*k2))
+                let sinp2 = math.sqrt(1 + 2 * (a2 * j2 - i2 * k2))
+                let cosp2 = math.sqrt(1 - 2 * (a2 * j2 - i2 * k2))
+                const ang_two = 2 * math.atan2(sinp2, cosp2) - (math.pi/2)
 
                 // Used to be multiplied by a factor of (9/32)
                 let ang1 = ang_one * (180 / Math.PI);
