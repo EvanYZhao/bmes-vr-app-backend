@@ -239,12 +239,13 @@ server.on("connection", (ws, req) => {
                 let j1 = quat1[2];
                 let k1 = quat1[3];
                 // Wrong orientation for IMU (roll)
-                const ang_one =
-                    2 *
-                    math.atan2(
-                        2 * (a1 * i1 + j1 * k1),
-                        1 - 2 * math.sqrt(i1 ** 2 + j1 ** 2)
-                    );
+                // const ang_one =
+                //     2 *
+                //     math.atan2(
+                //         2 * (a1 * i1 + j1 * k1),
+                //         1 - 2 * math.sqrt(i1 ** 2 + j1 ** 2)
+                //     );
+                const ang_one = math.asin(2*(a1*j1 - i1*k1))
 
                 // arctan(2*(w*x + y*z) / (1 - 2 * math.sqrt(x^2 + y^2)))
                 let a2 = quat2[0];
@@ -252,18 +253,17 @@ server.on("connection", (ws, req) => {
                 let j2 = quat2[2];
                 let k2 = quat2[3];
                 // Wrong orientation for IMU (roll)
-                const ang_two =
-                    2 *
-                    math.atan2(
-                        2 * (a2 * i2 + j2 * k2),
-                        1 - 2 * math.sqrt(i2 ** 2 + j2 ** 2)
-                    );
+                // const ang_two =
+                //     2 *
+                //     math.atan2(
+                //         2 * (a2 * i2 + j2 * k2),
+                //         1 - 2 * math.sqrt(i2 ** 2 + j2 ** 2)
+                //     );
+                const ang_two = math.asin(2*(a2*j2 - i2*k2))
 
                 // Used to be multiplied by a factor of (9/32)
                 let ang1 = ang_one * (180 / Math.PI);
                 let ang2 = ang_two * (180 / Math.PI);
-                console.log("Euler roll in radians:", ang_one)
-                console.log(ang_two)
 
                 // If your posture is bad while timer is not running, start the timer
                 if (ang1 - ang2 >= threshold_angle && !timerIsRunning) {
