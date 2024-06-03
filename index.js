@@ -142,32 +142,6 @@ const authorizeUpgrade = (ws, token, req, head) => {
     }
 };
 
-// Function which converts quaternion to Euler Angles
-function quaternionToEulerAngles(q) {
-    const [w, x, y, z] = q;
-  
-    // Roll (x-axis rotation)
-    const sinr_cosp = 2 * (w * x + y * z);
-    const cosr_cosp = 1 - 2 * (x * x + y * y);
-    const roll = Math.atan2(sinr_cosp, cosr_cosp);
-  
-    // Pitch (y-axis rotation)
-    const sinp = 2 * (w * y - z * x);
-    let pitch;
-    if (Math.abs(sinp) >= 1) {
-      pitch = Math.sign(sinp) * Math.PI / 2; // use 90 degrees if out of range
-    } else {
-      pitch = Math.asin(sinp);
-    }
-  
-    // Yaw (z-axis rotation)
-    const siny_cosp = 2 * (w * z + x * y);
-    const cosy_cosp = 1 - 2 * (y * y + z * z);
-    const yaw = Math.atan2(siny_cosp, cosy_cosp);
-  
-    return { roll, pitch, yaw };
-}
-
 // Listens for a connection
 server.on("connection", (ws, req) => {
     if (!req.url.includes("?")) {
@@ -185,7 +159,7 @@ server.on("connection", (ws, req) => {
                 // Deconstructing the values received from raspberry pi
                 const parsed = JSON.parse(message);
                 const pump = parsed.pump_power;
-                const solenoid = parsed.solenoid_power
+                const solenoid = parsed.solenoid_power;
                 const gyro_1 = parsed.gyro_1;
                 const gyro_2 = parsed.gyro_2;
                 const acc_1 = parsed.acc_1;
@@ -231,7 +205,9 @@ server.on("connection", (ws, req) => {
                         solenoids_currently_on = true;
                         let rpi_con = connections["raspberry"];
                         console.log("Activating solenoid valves to deflate");
-                        rpi_con.send(JSON.stringify({ solenoid_power: solenoid }));
+                        rpi_con.send(
+                            JSON.stringify({ solenoid_power: solenoid })
+                        );
                     }
                     return;
                 }
@@ -242,8 +218,12 @@ server.on("connection", (ws, req) => {
                     if ("raspberry" in connections) {
                         solenoids_currently_on = false;
                         let rpi_con = connections["raspberry"];
-                        console.log("Deactivating solenoid valves to stop deflation");
-                        rpi_con.send(JSON.stringify({ solenoid_power: solenoid }));
+                        console.log(
+                            "Deactivating solenoid valves to stop deflation"
+                        );
+                        rpi_con.send(
+                            JSON.stringify({ solenoid_power: solenoid })
+                        );
                     }
                     return;
                 }
@@ -258,31 +238,32 @@ server.on("connection", (ws, req) => {
                 let i1 = quat1[1];
                 let j1 = quat1[2];
                 let k1 = quat1[3];
-                // Wrong orientation for IMU (yaw)
-                // const ang_one = 
-                //     2 *
-                //     math.atan(
-                //         (2 * (a1 * i1 + j1 * k1)) /
-                //             (1 - 2 * math.sqrt(i1 ** 2 + j1 ** 2))
-                //     );
-                const ang_one = quaternionToEulerAngles(quat1)
+                // Wrong orientation for IMU (roll)
+                const ang_one =
+                    2 *
+                    math.atan2(
+                        2 * (a1 * i1 + j1 * k1),
+                        1 - 2 * math.sqrt(i1 ** 2 + j1 ** 2)
+                    );
 
+                // arctan(2*(w*x + y*z) / (1 - 2 * math.sqrt(x^2 + y^2)))
                 let a2 = quat2[0];
                 let i2 = quat2[1];
                 let j2 = quat2[2];
                 let k2 = quat2[3];
-                // Wrong orientation for IMU (yaw)
-                // const ang_two =
-                //     2 *
-                //     math.atan(
-                //         (2 * (a2 * i2 + j2 * k2)) /
-                //             (1 - 2 * math.sqrt(i2 ** 2 + j2 ** 2))
-                //     );
-                const ang_two = quaternionToEulerAngles(quat2)
+                // Wrong orientation for IMU (roll)
+                const ang_two =
+                    2 *
+                    math.atan2(
+                        2 * (a2 * i2 + j2 * k2),
+                        1 - 2 * math.sqrt(i2 ** 2 + j2 ** 2)
+                    );
 
-
-                let ang1 = (9 / 32) * (ang_one.pitch * (180 / Math.PI));
-                let ang2 = (9 / 32) * (ang_two.pitch * (180 / Math.PI));
+                // Used to be multiplied by a factor of (9/32)
+                let ang1 = ang_one * (180 / Math.PI);
+                let ang2 = ang_two * (180 / Math.PI);
+                print("Euler roll in radians:", ang_one)
+                print(ang_two)
 
                 // If your posture is bad while timer is not running, start the timer
                 if (ang1 - ang2 >= threshold_angle && !timerIsRunning) {
@@ -294,7 +275,9 @@ server.on("connection", (ws, req) => {
 
                 // If your posture is good while timer is running, kill the timer
                 if (ang1 - ang2 < threshold_angle && timerIsRunning) {
-                    console.log("Stopping countdown because posture returned to normal")
+                    console.log(
+                        "Stopping countdown because posture returned to normal"
+                    );
                     resetTimer();
                 }
 
