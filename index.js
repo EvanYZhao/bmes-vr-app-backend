@@ -262,8 +262,8 @@ server.on("connection", (ws, req) => {
                 // Used to be multiplied by a factor of (9/32)
                 let ang1 = ang_one * (180 / Math.PI);
                 let ang2 = ang_two * (180 / Math.PI);
-                print("Euler roll in radians:", ang_one)
-                print(ang_two)
+                console.log("Euler roll in radians:", ang_one)
+                console.log(ang_two)
 
                 // If your posture is bad while timer is not running, start the timer
                 if (ang1 - ang2 >= threshold_angle && !timerIsRunning) {
