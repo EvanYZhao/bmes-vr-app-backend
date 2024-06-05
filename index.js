@@ -36,10 +36,11 @@ const server = new WebSocketServer({
 const connections = {};
 
 let pumps_currently_on = false;
+let pumps_auto_on = false;
 let solenoids_currently_on = false;
 let rpi_connected = false;
 
-const threshold_angle = 15;
+const threshold_angle = 25;
 const bad_posture_time_ms = 5000;
 
 let timer;
@@ -52,11 +53,12 @@ function startTimer() {
             timerIsRunning = false;
             if ("raspberry" in connections) {
                 pumps_currently_on = true;
+                pumps_auto_on = true;
                 let rpi_con = connections["raspberry"];
                 console.log(
                     "Turning on pumps because consistent bad posture has been detected"
                 );
-                rpi_con.send(JSON.stringify({ pump_power: 1 }));
+                rpi_con.send(JSON.stringify({ pump_power: true }));
             }
         }, bad_posture_time_ms);
     }
@@ -72,6 +74,7 @@ function resetTimer() {
 function turnOffPumps() {
     if ("raspberry" in connections) {
         pumps_currently_on = false;
+        pumps_auto_on = false;
         let rpi_con = connections["raspberry"];
         console.log("Turning off pumps because bad posture has been corrected");
         rpi_con.send(JSON.stringify({ pump_power: false }));
@@ -268,27 +271,27 @@ server.on("connection", (ws, req) => {
                 let ang1 = ang_one * (180 / Math.PI);
                 let ang2 = ang_two * (180 / Math.PI);
 
-                // If your posture is bad while timer is not running, start the timer
-                if (ang1 - ang2 >= threshold_angle && !timerIsRunning) {
+                // If your posture is bad while timer is not running (and posture is not already being fixed), start the timer
+                if ((ang1 - ang2) >= threshold_angle && !timerIsRunning && !pumps_auto_on && !pumps_currently_on) {
                     console.log(
-                        "Threshold exceeded for first time, starting timer"
+                        "Threshold exceeded during non-postural correction phase, starting timer"
                     );
                     startTimer();
                 }
 
-                // If your posture is good while timer is running, kill the timer
-                if (ang1 - ang2 < threshold_angle && timerIsRunning) {
+                // If your posture returns back to normal while timer is running, kill the timer
+                if ((ang1 - ang2) < 2 && timerIsRunning) {
                     console.log(
                         "Stopping countdown because posture returned to normal"
                     );
                     resetTimer();
                 }
 
-                // If your posture is good while timer is not running, then turn
-                // off the pumps if they are pumping
-                // if (pumps_currently_on && (ang1 - ang2) < threshold_angle && !timerIsRunning) {
-                //     turnOffPumps()
-                // }
+                // If pumps are on due to automatic control bit and posture returned to normal,
+                // then, turn off the pumps 
+                if (pumps_currently_on && pumps_auto_on && (ang1 - ang2) < 2) {
+                    turnOffPumps()
+                }
 
                 // Creating an obj to send
                 const json_data = {
