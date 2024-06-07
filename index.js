@@ -279,7 +279,7 @@ server.on("connection", (ws, req) => {
                 }
 
                 // If your posture returns back to normal while timer is running, kill the timer
-                if ((ang1 - ang2) < 2 && timerIsRunning) {
+                if ((ang1 - ang2) < -5 && timerIsRunning) {
                     console.log(
                         "Stopping countdown because posture returned to normal"
                     );
@@ -288,7 +288,7 @@ server.on("connection", (ws, req) => {
 
                 // If pumps are on due to automatic control bit and posture returned to normal,
                 // then, turn off the pumps 
-                if (pumps_auto_on && (ang1 - ang2) < 2) {
+                if (pumps_auto_on && (ang1 - ang2) < -5) {
                     turnOffPumps()
                 }
 
