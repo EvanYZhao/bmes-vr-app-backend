@@ -35,7 +35,7 @@ const server = new WebSocketServer({
 
 const connections = {};
 
-let pumps_currently_on = false;
+let pumps_manually_on = false;
 let pumps_auto_on = false;
 let solenoids_currently_on = false;
 let rpi_connected = false;
@@ -52,7 +52,6 @@ function startTimer() {
         timer = setTimeout(() => {
             timerIsRunning = false;
             if ("raspberry" in connections) {
-                pumps_currently_on = true;
                 pumps_auto_on = true;
                 let rpi_con = connections["raspberry"];
                 console.log(
@@ -73,7 +72,6 @@ function resetTimer() {
 
 function turnOffPumps() {
     if ("raspberry" in connections) {
-        pumps_currently_on = false;
         pumps_auto_on = false;
         let rpi_con = connections["raspberry"];
         console.log("Turning off pumps because bad posture has been corrected");
@@ -179,9 +177,9 @@ server.on("connection", (ws, req) => {
 
                 // In case turn-on pump button gets pressed, then propagate pump ping
                 // to raspberry pi and don't broadcast to the web app
-                if (pump) {
+                if (pump && !pumps_manually_on) {
                     if ("raspberry" in connections) {
-                        pumps_currently_on = true;
+                        pumps_manually_on = true;
                         let rpi_con = connections["raspberry"];
                         console.log("Turning on pumps");
                         rpi_con.send(JSON.stringify({ pump_power: pump }));
@@ -191,9 +189,9 @@ server.on("connection", (ws, req) => {
 
                 // In case turn-off pump button is pressed and pumps are
                 // currently on, then propagate to rpi and don't broadcast to web app
-                if (pump != null && !pump && pumps_currently_on) {
+                if (pump != null && !pump && pumps_manually_on) {
                     if ("raspberry" in connections) {
-                        pumps_currently_on = false;
+                        pumps_manually_on = false;
                         let rpi_con = connections["raspberry"];
                         console.log("Turning off pumps");
                         rpi_con.send(JSON.stringify({ pump_power: pump }));
@@ -233,8 +231,8 @@ server.on("connection", (ws, req) => {
 
                 // Deriving angles using complementary filter
                 const dt = 0.1;
-                const quat1 = new ComplementaryFilter(gyro_1, acc_1, dt).Q();
-                const quat2 = new ComplementaryFilter(gyro_2, acc_2, dt).Q();
+                const quat1 = new ComplementaryFilter(gyro_1, acc_1, dt, 0.5).Q();
+                const quat2 = new ComplementaryFilter(gyro_2, acc_2, dt, 0,5).Q();
 
                 // Perform quat conversion to angle here
                 let a1 = quat1[0];
@@ -272,7 +270,7 @@ server.on("connection", (ws, req) => {
                 let ang2 = ang_two * (180 / Math.PI);
 
                 // If your posture is bad while timer is not running (and posture is not already being fixed), start the timer
-                if ((ang1 - ang2) >= threshold_angle && !timerIsRunning && !pumps_auto_on && !pumps_currently_on) {
+                if ((ang1 - ang2) >= threshold_angle && !timerIsRunning && !pumps_auto_on && !pumps_manually_on) {
                     console.log(
                         "Threshold exceeded during non-postural correction phase, starting timer"
                     );
@@ -289,7 +287,7 @@ server.on("connection", (ws, req) => {
 
                 // If pumps are on due to automatic control bit and posture returned to normal,
                 // then, turn off the pumps 
-                if (pumps_currently_on && pumps_auto_on && (ang1 - ang2) < 2) {
+                if (pumps_auto_on && (ang1 - ang2) < 2) {
                     turnOffPumps()
                 }
 
