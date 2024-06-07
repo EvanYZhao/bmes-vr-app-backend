@@ -189,9 +189,10 @@ server.on("connection", (ws, req) => {
 
                 // In case turn-off pump button is pressed and pumps are
                 // currently on, then propagate to rpi and don't broadcast to web app
-                if (pump != null && !pump && pumps_manually_on) {
+                if (pump != null && !pump && (pumps_manually_on || pumps_auto_on)) {
                     if ("raspberry" in connections) {
                         pumps_manually_on = false;
+                        pumps_auto_on = false;
                         let rpi_con = connections["raspberry"];
                         console.log("Turning off pumps");
                         rpi_con.send(JSON.stringify({ pump_power: pump }));
